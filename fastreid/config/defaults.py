@@ -203,6 +203,8 @@ _C.DATASETS.NAMES = ("Market1501",)
 _C.DATASETS.TESTS = ("Market1501",)
 # Combine trainset and testset joint training
 _C.DATASETS.COMBINEALL = False
+# Dataset root directory; empty falls back to $FASTREID_DATASETS or ./datasets
+_C.DATASETS.ROOT = ""
 
 # -----------------------------------------------------------------------------
 # DataLoader

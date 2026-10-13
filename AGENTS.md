@@ -47,7 +47,7 @@ python3 demo/demo.py --config-file <cfg> --input img.jpg --opts MODEL.WEIGHTS /p
 
 ## Datasets and outputs
 
-- Dataset root from `$FASTREID_DATASETS`, default `datasets/` relative to cwd (`fastreid/data/build.py:34`). Expected layouts in `datasets/README.md`.
+- Dataset root from `DATASETS.ROOT` if set (CLI-overridable), else `$FASTREID_DATASETS`, else `datasets/` relative to cwd (`fastreid/data/build.py:34`). Relative paths resolve against the repo root (all entrypoints run from there). Expected layouts in `datasets/README.md`.
 - Each run writes `config.yaml`, `metrics.json`, and checkpoints into `cfg.OUTPUT_DIR` (e.g. `logs/market1501/bagtricks_R50`, gitignored). `config.yaml` there is the full resolved config — the source of truth for reproducing a run.
 
 ## Config system

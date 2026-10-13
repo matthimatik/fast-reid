@@ -40,8 +40,9 @@ def _train_loader_from_config(cfg, *, train_set=None, transforms=None, sampler=N
 
     if train_set is None:
         train_items = list()
+        root = cfg.DATASETS.ROOT or _root
         for d in cfg.DATASETS.NAMES:
-            data = DATASET_REGISTRY.get(d)(root=_root, **kwargs)
+            data = DATASET_REGISTRY.get(d)(root=root, **kwargs)
             if comm.is_main_process():
                 data.show_train()
             train_items.extend(data.train)
@@ -111,7 +112,7 @@ def _test_loader_from_config(cfg, *, dataset_name=None, test_set=None, num_query
 
     if test_set is None:
         assert dataset_name is not None, "dataset_name must be explicitly passed in when test_set is not provided"
-        data = DATASET_REGISTRY.get(dataset_name)(root=_root, **kwargs)
+        data = DATASET_REGISTRY.get(dataset_name)(root=cfg.DATASETS.ROOT or _root, **kwargs)
         if comm.is_main_process():
             data.show_test()
         test_items = data.query + data.gallery

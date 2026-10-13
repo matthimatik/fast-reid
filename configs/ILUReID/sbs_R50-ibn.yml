@@ -7,9 +7,10 @@ MODEL:
 DATASETS:
   NAMES: ("ILUReID",)
   TESTS: ("ILUReID",)
-  # TRUDI build output; override on the command line with
+  # TRUDI build output (relative to the repo root, where you launch
+  # training); override on the command line with
   #   DATASETS.ROOT /path/to/trudi/builds/reid/ilu_reid/market1501
-  ROOT: ../../trudi/builds/reid/ilu_reid/market1501
+  ROOT: ../trudi/builds/reid/ilu_reid/market1501
 
 INPUT:
   # ILU crops are wide object crops, roughly square after padding
