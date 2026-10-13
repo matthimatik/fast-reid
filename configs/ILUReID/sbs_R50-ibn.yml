@@ -1,0 +1,26 @@
+_BASE_: ../Base-SBS.yml
+
+MODEL:
+  BACKBONE:
+    WITH_IBN: True
+
+DATASETS:
+  NAMES: ("ILUReID",)
+  TESTS: ("ILUReID",)
+  # TRUDI build output; override on the command line with
+  #   DATASETS.ROOT /path/to/trudi/builds/reid/ilu_reid/market1501
+  ROOT: ../../trudi/builds/reid/ilu_reid/market1501
+
+INPUT:
+  # ILU crops are wide object crops, roughly square after padding
+  SIZE_TRAIN: [ 256, 256 ]
+  SIZE_TEST: [ 256, 256 ]
+
+DATALOADER:
+  # most identities have a single view; smaller instance batches fit
+  NUM_INSTANCE: 4
+
+SOLVER:
+  MAX_EPOCH: 60
+
+OUTPUT_DIR: logs/ilureid/sbs_R50-ibn
