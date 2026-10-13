@@ -6,6 +6,13 @@ FastReID: PyTorch re-identification research platform, detectron2-style (yacs co
 
 Every entrypoint does `sys.path.append('.')`, so `fastreid` resolves only when cwd is the repo root (verified: fails from any other directory). Applies to `tools/*`, `demo/*`, and project scripts (`projects/*/train_net.py`, `projects/FastTune/tune_net.py`).
 
+## Setup (this clone)
+
+- Venv at `.venv/` (Python 3.11, torch 2.4.1+cu121, yacs, faiss-cpu, gdown, tensorboard, opencv-headless, Cython). Activate with `source .venv/bin/activate`; no conda, system pip is PEP-668 locked.
+- Code is patched for torch ≥ 2 / Python 3.11: `collections.abc.Mapping` (`fastreid/data/build.py`, `fastreid/evaluation/testing.py`) and `optimizer.zero_grad(set_to_none=False)` in both trainers (`fastreid/engine/train_loop.py`) — the latter is required because `ContiguousParams` shares one grad buffer across param groups; `set_to_none=True` (torch≥2 default) severs it and the optimizer sees no grads (`AssertionError: No inf checks were recorded`). Do not revert.
+- Cython rank eval compiled (`make all` in `fastreid/evaluation/rank_cylib`); generated `.c` files are gitignored.
+- Verified end-to-end: 40-epoch synthetic Market1501 run trains on the RTX 3090, checkpoints save, `--eval-only` from a checkpoint evaluates, ImageNet backbone download works.
+
 ## Commands
 
 ```bash
@@ -22,6 +29,10 @@ python3 demo/demo.py --config-file <cfg> --input img.jpg --opts MODEL.WEIGHTS /p
 ```
 
 - Multi-machine: `--num-machines/--machine-rank/--dist-url` plus `GLOO_SOCKET_IFNAME`/`NCCL_SOCKET_IFNAME` (see `GETTING_STARTED.md`). Shipped configs assume 1 GPU (`SOLVER.IMS_PER_BATCH`).
+- Trainer is **epoch-based**: `SOLVER.MAX_EPOCH`, `SOLVER.CHECKPOINT_PERIOD`, `TEST.EVAL_PERIOD` are in epochs — there is no `SOLVER.MAX_ITER`. `DefaultTrainer.train()` asserts an eval ran during training, so `TEST.EVAL_PERIOD` must fire within `MAX_EPOCH` (0 disables eval and crashes at end of training).
+- LR schedule quirks (verified with instrumented hooks, torch 2.4):
+  - `WarmupLR` steps per **iteration** while `next_iter <= SOLVER.WARMUP_ITERS`; `MultiStepLR` steps per **epoch** after warmup. With AMP, `LRScheduler.after_step` skips the warmup step whenever the GradScaler scale changed (overflow); the scaler's initial backoff (65536→~256) eats the first ~8 iterations, so tiny `WARMUP_ITERS` (<10) can be fully swallowed and LR stays at `BASE_LR * WARMUP_FACTOR`. Defaults use `WARMUP_ITERS: 2000`, which is fine.
+  - torch ≥2 `MultiStepLR.get_lr()` multiplies the **current** `param_group["lr"]` at milestones (not `base_lrs`), so milestone decay stacks on whatever LR warmup left behind.
 - Optional but recommended: compile Cython rank eval, otherwise a slow pure-Python fallback with a warning is used:
   `cd fastreid/evaluation/rank_cylib && make all`
 
@@ -61,7 +72,7 @@ python3 demo/demo.py --config-file <cfg> --input img.jpg --opts MODEL.WEIGHTS /p
   python3 -m compileall -q fastreid tools demo projects tests
   python3 -c "from fastreid.config import get_cfg; c=get_cfg(); c.merge_from_file('configs/Market1501/bagtricks_R50.yml')"
   ```
-- Data-free model smoke test: build from a config with `MODEL.BACKBONE.PRETRAIN False` to avoid the weight download.
+- Data-free model smoke test: build from a config with `MODEL.BACKBONE.PRETRAIN False` to avoid the weight download. Full train/eval smoke test uses the synthetic Market1501-format set at `datasets/Market-1501-v15.09.15/` (10 train / 10 test ids, generated locally, gitignored): `python3 tools/train_net.py --config-file configs/Market1501/bagtricks_R50.yml SOLVER.MAX_EPOCH 40 TEST.EVAL_PERIOD 20 MODEL.BACKBONE.PRETRAIN False OUTPUT_DIR /tmp/smoke MODEL.DEVICE cuda:0`.
 
 ## projects/
 

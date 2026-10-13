@@ -1,6 +1,15 @@
 
 logs
 
+# local environment and datasets
+.venv/
+datasets/*
+!datasets/README.md
+
+# cython-generated rank eval sources (build with `make all` in rank_cylib)
+fastreid/evaluation/rank_cylib/rank_cy.c
+fastreid/evaluation/rank_cylib/roc_cy.c
+
 # compilation and distribution
 __pycache__
 _ext
